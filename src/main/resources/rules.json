@@ -1,0 +1,15 @@
+{
+  "rules": {
+    "overspeed": {
+      "escalateIfCount": 3,
+      "windowMins": 60
+    },
+    "feedback_negative": {
+      "escalateIfCount": 2,
+      "windowMins": 1440
+    },
+    "compliance": {
+      "autoCloseIf": "document_valid"
+    }
+  }
+}

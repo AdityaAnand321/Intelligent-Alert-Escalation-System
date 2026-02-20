@@ -1,3 +1,8 @@
 spring:
   application:
     name: demo
+
+alerts:
+  expiry-mins: 1440
+  scheduler:
+    fixed-delay-ms: 120000
