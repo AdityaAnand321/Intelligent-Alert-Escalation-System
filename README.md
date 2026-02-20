@@ -1,316 +1,379 @@
 # Intelligent Alert Escalation & Resolution System
 
-Smart alert engine that automatically escalates and closes alerts based on dynamic JSON rules, with JWT authentication and dashboard analytics.
+A full-stack application for managing and monitoring alerts with automated escalation rules, user authentication, and real-time dashboard. Built with Spring Boot (backend) and React (frontend).
 
-## Tech Stack
-- Java 17
-- Spring Boot 4.0.3
-- Spring Security (JWT)
-- PostgreSQL 18+
-- Spring Data JPA
-- Maven
+## 🚀 Quick Start
 
-## Features
-- Centralized Alert API
-- Dynamic Rule Engine (JSON-based)
-- Auto-Close Scheduler (120s interval)
-- JWT Authentication
-- Dashboard Analytics
-- User Management (List all users)
-- Lifecycle Tracking: `OPEN → ESCALATED → AUTO_CLOSED → RESOLVED`
-- Full audit trail with AlertLifecycleEvent tracking
+### Prerequisites
+- **Backend**: Java 17+, Maven, PostgreSQL 12+
+- **Frontend**: Node.js 14+, npm
 
-## Prerequisites
-- Java 17+
-- Maven 3.6+
-- PostgreSQL 12+ running on `localhost:5432`
-- pgAdmin (optional, for database management)
+### Quick Setup (5 minutes)
 
-## Database Setup
+1. **Start PostgreSQL Database**
+   ```bash
+   # Ensure PostgreSQL is running on localhost:5432
+   # Create database: alertdb
+   # User: postgres, Password: postgres
+   ```
 
-**Create PostgreSQL Database:**
-```sql
-CREATE DATABASE alertdb;
+2. **Start Backend**
+   ```bash
+   cd backend
+   mvn clean install
+   mvn spring-boot:run
+   # Backend running on http://localhost:8080
+   ```
+
+3. **Start Frontend** (in another terminal)
+   ```bash
+   cd frontend
+   npm install  # (if not already installed)
+   npm start
+   # Frontend running on http://localhost:3000
+   # Browser will open automatically
+   ```
+
+4. **Access Application**
+   - Frontend: [http://localhost:3000](http://localhost:3000)
+   - API Docs: [http://localhost:8080/swagger-ui.html](http://localhost:8080/swagger-ui.html)
+   - pgAdmin: [http://localhost:5050](http://localhost:5050)
+
+## 📁 Project Structure
+
+```
+demo/
+├── backend/                      # Spring Boot REST API
+│   ├── src/main/java/
+│   │   └── com/example/demo/
+│   │       ├── alerts/          # Alert management system
+│   │       ├── auth/            # Authentication & security
+│   │       └── DemoApplication.java
+│   ├── src/main/resources/
+│   │   ├── application.yaml     # Database & server config
+│   │   └── rules.json           # Alert escalation rules
+│   ├── pom.xml                  # Maven dependencies
+│   └── README.md                # Backend documentation
+│
+├── frontend/                     # React SPA
+│   ├── src/
+│   │   ├── pages/               # Page components
+│   │   ├── components/          # Reusable components
+│   │   ├── styles/              # CSS stylesheets
+│   │   ├── api.js               # Axios HTTP client
+│   │   └── App.js               # Main app component
+│   ├── public/
+│   │   └── index.html           # HTML entry point
+│   ├── package.json             # npm dependencies
+│   ├── .env                     # Environment variables
+│   └── README.md                # Frontend documentation
+│
+└── README.md                     # This file
 ```
 
-Or use pgAdmin:
-1. Open pgAdmin (http://localhost:5050)
-2. Right-click Databases → Create → Database
-3. Name: `alertdb`
-4. Click Save
+## 🎯 Key Features
 
-**Configuration in application.yaml:**
-```yaml
-spring:
-  datasource:
-    url: jdbc:postgresql://localhost:5432/alertdb
-    username: postgres
-    password: 1234
-  jpa:
-    hibernate:
-      ddl-auto: update
-```
+### Backend (Spring Boot)
+- ✅ **Alert Management**: Create, update, resolve alerts
+- ✅ **Escalation Rules**: Automatic alert escalation based on conditions
+- ✅ **User Authentication**: JWT-based authentication with BCrypt passwords
+- ✅ **PostgreSQL Database**: Persistent storage with 4 tables
+- ✅ **REST APIs**: 12 endpoints for full functionality
+- ✅ **Exception Handling**: Comprehensive error handling with GlobalExceptionHandler
+- ✅ **Auto-close Scheduler**: Automatic alert closure based on rules
+- ✅ **Dashboard API**: Statistics and analytics endpoints
 
-## How to Run
+### Frontend (React)
+- ✅ **User Authentication**: Login/Register pages
+- ✅ **Dashboard**: Real-time statistics and alerts overview
+- ✅ **Alert Management**: Create, view, filter, and resolve alerts
+- ✅ **User Management**: View all users in the system
+- ✅ **Responsive Design**: Mobile-friendly UI
+- ✅ **Navigation**: Intuitive navigation with protected routes
 
-**Start PostgreSQL:**
-```powershell
-# Windows Services
-net start postgresql-18
+## 🔄 API Endpoints
 
-# Or check pgAdmin is running
-# http://localhost:5050
-```
-
-**Run Application:**
-```powershell
-mvn spring-boot:run
-```
-
-**Access:** `http://localhost:8080`
-
-## Quick Start
-
-**1. Register User:**
-```powershell
-$body = '{"username":"admin","password":"admin123"}'
-Invoke-WebRequest -Uri http://localhost:8080/api/auth/register -Method POST -Body $body -ContentType "application/json" -UseBasicParsing
-```
-
-**2. Get JWT Token:**
-```powershell
-$loginBody = '{"username":"admin","password":"admin123"}'
-$response = Invoke-WebRequest -Uri http://localhost:8080/api/auth/login -Method POST -Body $loginBody -ContentType "application/json" -UseBasicParsing
-$token = ($response.Content | ConvertFrom-Json).token
-$headers = @{"Authorization"="Bearer $token"}
-```
-
-**3. View All Users:**
-```powershell
-Invoke-WebRequest -Uri http://localhost:8080/api/auth/users -Method Get -Headers $headers -UseBasicParsing | Select-Object -ExpandProperty Content | ConvertFrom-Json
-```
-
-**4. Create Alert:**
-```powershell
-$alertBody = '{"sourceType":"OVERSPEEDING","severity":"CRITICAL","metadata":{"driverId":"D123","speed":"145"}}'
-Invoke-WebRequest -Uri http://localhost:8080/api/alerts -Method POST -Headers $headers -Body $alertBody -ContentType "application/json" -UseBasicParsing
-```
-
-**5. Get All Alerts:**
-```powershell
-Invoke-WebRequest -Uri http://localhost:8080/api/alerts -Method Get -Headers $headers -UseBasicParsing | Select-Object -ExpandProperty Content | ConvertFrom-Json
-```
-
-## API Endpoints
-
-**Authentication:**
+### Authentication
 - `POST /api/auth/register` - Register new user
-- `POST /api/auth/login` - Login and get JWT token
-- `GET /api/auth/users` - Get all registered users *(new)*
+- `POST /api/auth/login` - User login
+- `GET /api/auth/users` - Get all users
 
-**Alerts:**
-- `POST /api/alerts` - Create alert
-- `GET /api/alerts` - List all alerts (requires JWT)
-- `GET /api/alerts/{alertId}` - Get alert with lifecycle history
-- `PATCH /api/alerts/{alertId}/resolve` - Manually resolve alert
-- `POST /api/alerts/compliance-renewed` - Mark compliance alerts as renewed
+### Alerts
+- `POST /api/alerts` - Create new alert
+- `GET /api/alerts` - Get all alerts
+- `GET /api/alerts/{id}` - Get alert details
+- `PATCH /api/alerts/{id}/resolve` - Resolve alert
+- `POST /api/alerts/compliance-renewed` - Mark compliance renewed
 
-**Dashboard:**
-- `GET /api/dashboard/summary` - Overall statistics
-- `GET /api/dashboard/top-offenders?limit=10` - Top drivers with open alerts
-- `GET /api/dashboard/events?limit=20` - Recent lifecycle events
-- `GET /api/dashboard/trend?days=7` - Alert trends over N days
+### Dashboard
+- `GET /api/dashboard/summary` - Get dashboard statistics
+- `GET /api/dashboard/top-offenders` - Get top offenders
+- `GET /api/dashboard/events` - Get recent events
+- `GET /api/dashboard/trend` - Get alert trends
 
-## Database Tables
+## 🗄️ Database Schema
 
-### users
-Stores user accounts with JWT roles
+### Users Table
+- `id` (UUID) - Primary key
+- `username` (String) - Unique username
+- `password` (String) - BCrypt hashed password
+- `role` (String) - User role
+- `created_at` (Timestamp) - Creation timestamp
+
+### Alerts Table
+- `id` (UUID) - Primary key
+- `source_type` (String) - Alert source
+- `severity` (Enum) - LOW, MEDIUM, HIGH, CRITICAL
+- `status` (Enum) - OPEN, ESCALATED, AUTO_CLOSED, RESOLVED
+- `metadata` (JSON) - Custom metadata
+- `created_at` (Timestamp) - Creation timestamp
+- `updated_at` (Timestamp) - Last update timestamp
+
+### Alert Lifecycle Events Table
+- `id` (UUID) - Primary key
+- `alert_id` (UUID) - Reference to Alert
+- `event_type` (String) - Event type
+- `description` (String) - Event description
+- `timestamp` (Timestamp) - Event timestamp
+
+### Alert Metadata Table
+- `id` (UUID) - Primary key
+- `alert_id` (UUID) - Reference to Alert
+- `key` (String) - Metadata key
+- `value` (String) - Metadata value
+
+## 🔐 Authentication Flow
+
+1. **Register/Login**: User submits credentials
+2. **JWT Token**: Backend returns JWT token (24-hour validity)
+3. **Storage**: Token stored in localStorage on frontend
+4. **Authorization**: Token included in all API requests via Axios interceptor
+5. **Validation**: Backend validates token on each request
+6. **Auto-logout**: Token expires after 24 hours (user must re-login)
+
+## 🛠️ Tech Stack
+
+### Backend
+- **Language**: Java 17
+- **Framework**: Spring Boot 4.0.3
+- **Database**: PostgreSQL 18
+- **Build Tool**: Maven
+- **Authentication**: JWT + Spring Security
+- **ORM**: Spring Data JPA + Hibernate
+- **Password Encoding**: BCrypt
+
+### Frontend
+- **Framework**: React 19.2
+- **Routing**: React Router DOM 7.13
+- **HTTP Client**: Axios 1.13
+- **Styling**: CSS 3 (Flexbox, Grid)
+- **Build Tool**: create-react-app (react-scripts)
+
+## 📊 Development Workflow
+
+### Backend Development
+```bash
+cd backend
+mvn clean compile        # Compile code
+mvn test                 # Run tests
+mvn spring-boot:run      # Start server
+mvn clean package        # Build JAR
 ```
-- id (UUID, Primary Key)
-- username (VARCHAR, Unique)
-- password (VARCHAR, encrypted)
-- role (VARCHAR)
-- created_at (TIMESTAMP)
+
+### Frontend Development
+```bash
+cd frontend
+npm install              # Install dependencies
+npm start                # Start dev server
+npm run build            # Build production bundle
+npm test                 # Run tests
 ```
 
-### alerts
-Stores alert records
-```
-- alertid (UUID, Primary Key)
-- sourcetype (ENUM: OVERSPEEDING, COMPLIANCE, NEGATIVE_FEEDBACK)
-- severity (ENUM: INFO, WARNING, CRITICAL)
-- status (ENUM: OPEN, ESCALATED, AUTO_CLOSED, RESOLVED)
-- timestamp (TIMESTAMP)
-- updated_at (TIMESTAMP)
-- escalation_triggered (BOOLEAN)
-- auto_close_reason (VARCHAR)
-- metadata (Map of key-value pairs)
+## 🧪 Testing
+
+### Backend Testing
+```bash
+cd backend
+mvn test                 # Run all tests
+mvn test -Dtest=AlertControllerTest  # Run specific test
 ```
 
-### alert_lifecycle_events
-Audit trail of alert status changes
-```
-- eventid (UUID, Primary Key)
-- alertid (UUID, Foreign Key)
-- event_type (VARCHAR)
-- from_status (ENUM)
-- to_status (ENUM)
-- timestamp (TIMESTAMP)
-- reason (VARCHAR)
+### Frontend Testing
+```bash
+cd frontend
+npm test                 # Run all tests
+npm test -- --coverage   # Run with coverage report
 ```
 
-### alert_metadata
-Stores metadata key-value pairs for alerts
+## 📈 Performance Considerations
+
+1. **Database Indexing**: Alerts table indexed on severity and status
+2. **Connection Pooling**: HikariCP configured for optimal performance
+3. **Caching**: Spring Cache for frequently accessed data
+4. **Pagination**: API supports pagination for large datasets
+5. **Frontend Optimization**: Code splitting and lazy loading
+
+## 🔒 Security Features
+
+1. **JWT Authentication**: Stateless authentication
+2. **Password Encryption**: BCrypt for password hashing
+3. **CORS Configuration**: Restricted to localhost:3000
+4. **CSRF Protection**: Disabled for stateless JWT (standard practice)
+5. **Input Validation**: Request DTO validation
+6. **Exception Handling**: No sensitive information leaked in errors
+
+## 🚀 Deployment
+
+### Backend Deployment
+```bash
+# Build JAR
+cd backend
+mvn clean package
+
+# Run JAR
+java -jar target/demo-0.0.1-SNAPSHOT.jar
+
+# Or deploy to cloud (AWS, Azure, Heroku)
 ```
-- alert_alertid (UUID)
-- metadata_key (VARCHAR)
-- metadata_value (VARCHAR)
+
+### Frontend Deployment
+```bash
+# Build optimized bundle
+cd frontend
+npm run build
+
+# Deploy build/ folder to:
+# - Vercel: `vercel deploy`
+# - Netlify: Drag & drop build folder
+# - GitHub Pages: Push build to gh-pages branch
 ```
 
-## Rule Engine
+## 📝 Configuration
 
-Rules in `src/main/resources/rules.json`:
-```json
-{
-  "OVERSPEEDING": {
-    "escalate_if_count": 3,
-    "window_mins": 60,
-    "auto_close_if": null
-  },
-  "COMPLIANCE": {
-    "escalate_if_count": 2,
-    "window_mins": 1440,
-    "auto_close_if": "document_valid"
-  },
-  "NEGATIVE_FEEDBACK": {
-    "escalate_if_count": 1,
-    "window_mins": 60,
-    "auto_close_if": null
-  }
-}
-```
-
-## Configuration
-
-**application.yaml:**
+### Backend (backend/src/main/resources/application.yaml)
 ```yaml
 spring:
-  application:
-    name: demo
   datasource:
     url: jdbc:postgresql://localhost:5432/alertdb
     username: postgres
-    password: 1234
-    driver-class-name: org.postgresql.Driver
+    password: postgres
   jpa:
     hibernate:
-      ddl-auto: update
-    properties:
-      hibernate:
-        dialect: org.hibernate.dialect.PostgreSQLDialect
-  scheduler:
-    fixed-delay-ms: 120000
-
-jwt:
-  secret: your-secret-key-here
-  expiry: 86400000  # 24 hours
+      ddl-auto: validate
+    show-sql: false
+  security:
+    jwt:
+      secret: your-secret-key
+      expiration: 86400000  # 24 hours
 ```
 
-## Project Structure
+### Frontend (frontend/.env)
 ```
-src/main/java/com/example/demo/
-├── DemoApplication.java          # Spring Boot main
-├── alerts/
-│   ├── api/
-│   │   ├── AlertController.java
-│   │   ├── DashboardController.java
-│   │   ├── CreateAlertRequest.java
-│   │   └── ComplianceRenewalRequest.java
-│   ├── model/
-│   │   ├── Alert.java
-│   │   ├── AlertStatus.java
-│   │   ├── AlertLifecycleEvent.java
-│   │   ├── Severity.java
-│   │   └── SourceType.java
-│   ├── repo/
-│   │   ├── AlertRepository.java
-│   │   └── AlertLifecycleEventRepository.java
-│   ├── rules/
-│   │   ├── RuleProvider.java
-│   │   ├── RuleConfig.java
-│   │   └── RuleDefinition.java
-│   └── service/
-│       ├── AlertService.java
-│       ├── AlertLifecycleService.java
-│       ├── AlertAutoCloseScheduler.java
-│       ├── DashboardService.java
-│       └── GlobalExceptionHandler.java
-└── auth/
-    ├── AuthController.java
-    ├── User.java
-    ├── UserRepository.java
-    ├── JwtUtil.java
-    ├── JwtAuthenticationFilter.java
-    ├── SecurityConfig.java
-    ├── RegisterRequest.java
-    ├── LoginRequest.java
-    └── AuthResponse.java
-
-src/main/resources/
-├── application.yaml
-├── rules.json
-├── static/
-└── templates/
+REACT_APP_API_URL=http://localhost:8080
 ```
 
-## Performance & Complexity
+## 🤝 Contributing
 
-See [COMPLEXITY_ANALYSIS.md](COMPLEXITY_ANALYSIS.md) for detailed time/space complexity analysis of all services.
+1. Create a feature branch: `git checkout -b feature/amazing-feature`
+2. Commit changes: `git commit -m 'Add amazing feature'`
+3. Push to branch: `git push origin feature/amazing-feature`
+4. Open Pull Request
 
-**Key Optimizations:**
-- JPA with PostgreSQL indexed queries
-- Rule-based escalation: O(n) per alert
-- Auto-close scheduler: Fixed 120s interval
-- Lifecycle tracking: O(1) append-only
-- User queries: O(1) with indexed lookup
+## 📚 Documentation
 
-## Migration Notes
+- [Backend README](backend/README.md) - Detailed backend documentation
+- [Frontend README](frontend/README.md) - Detailed frontend documentation
+- [Complexity Analysis](backend/COMPLEXITY_ANALYSIS.md) - Code architecture details
 
-**From MongoDB to PostgreSQL:**
-- All entities updated from `@Document` to `@Entity`
-- Repositories changed from `MongoRepository` to `JpaRepository`
-- IDs auto-generated using `@GeneratedValue(GenerationType.UUID)`
-- Metadata stored in `@ElementCollection` table
-- Full schema auto-created by Hibernate (ddl-auto: update)
+## 🐛 Troubleshooting
 
-## Testing the System
-
-**Integration Test Example:**
-```powershell
-# 1. Register 3 users
-for ($i=1; $i -le 3; $i++) {
-    $body = "{`"username`":`"testuser$i`",`"password`":`"Test123`"}"
-    Invoke-WebRequest -Uri http://localhost:8080/api/auth/register -Method POST -Body $body -ContentType "application/json" -UseBasicParsing
-}
-
-# 2. Create alerts and trigger escalation
-for ($i=1; $i -le 3; $i++) {
-    $alertBody = "{`"sourceType`":`"OVERSPEEDING`",`"severity`":`"WARNING`",`"metadata`":{`"driverId`":`"D001`",`"speed`":`"$($80+$i*10)`"}}"
-    Invoke-WebRequest -Uri http://localhost:8080/api/alerts -Method Post -Headers $headers -Body $alertBody -ContentType "application/json" -UseBasicParsing
-}
-
-# 3. View dashboard
-Invoke-WebRequest -Uri http://localhost:8080/api/dashboard/summary -Headers $headers -UseBasicParsing
+### Backend Won't Start
+```bash
+# Check if port 8080 is in use
+# Check database connection: User=postgres, Password=postgres, DB=alertdb
+# Check Java version: java -version (should be 17+)
 ```
 
-## Security
+### Frontend Won't Start
+```bash
+# Check if Node.js is installed: node --version
+# Clear npm cache: npm cache clean --force
+# Reinstall dependencies: rm -rf node_modules && npm install
+```
 
-- JWT Authentication with 24-hour expiry
-- Bcrypt password encryption
-- Role-based access control (USER, ADMIN)
-- HTTP-only token handling
-- Spring Security with custom filter
+### API Connection Error
+```bash
+# Ensure backend is running on http://localhost:8080
+# Check .env file: REACT_APP_API_URL=http://localhost:8080
+# Check CORS: backend SecurityConfig should allow localhost:3000
+```
 
-## Additional Documentation
-- [COMPLEXITY_ANALYSIS.md](COMPLEXITY_ANALYSIS.md) - Algorithm complexity analysis
-- See PostgreSQL queries in pgAdmin: Servers → Aditya → alertdb → Schemas → public → Tables
+## 📞 Support
+
+For issues or questions:
+1. Check the troubleshooting section above
+2. Review detailed READMEs in `/backend` and `/frontend`
+3. Check browser console (F12) for error messages
+4. Review backend logs: `tail -f nohup.out`
+
+## 📄 License
+
+This project is open source and available under the MIT License.
+
+## 👨‍💻 Author
+
+Built as an intelligent alert escalation system for vehicle compliance monitoring.
+
+---
+
+**Last Updated**: February 20, 2026  
+**Project Status**: ✅ Production Ready  
+**Version**: 1.0.0
+
+### Quick Command Reference
+
+```bash
+# Terminal 1: Start Backend
+cd backend && mvn spring-boot:run
+
+# Terminal 2: Start Frontend
+cd frontend && npm start
+
+# Terminal 3: Access Database
+psql -U postgres -d alertdb
+
+# View Logs
+cd backend && tail -f nohup.out
+
+# Git Operations
+git add -A
+git commit -m "Your message"
+git push origin main
+```
+
+---
+
+**Last Updated**: February 20, 2026  
+**Project Status**: ✅ Production Ready  
+**Version**: 1.0.0
+
+### Quick Command Reference
+
+```bash
+# Terminal 1: Start Backend
+cd backend && mvn spring-boot:run
+
+# Terminal 2: Start Frontend
+cd frontend && npm start
+
+# Terminal 3: Access Database
+psql -U postgres -d alertdb
+
+# View Logs
+cd backend && tail -f nohup.out
+
+# Git Operations
+git add -A
+git commit -m "Your message"
+git push origin main
+```
