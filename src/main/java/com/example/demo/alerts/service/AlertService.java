@@ -13,6 +13,7 @@ import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 
 import com.example.demo.alerts.api.CreateAlertRequest;
+import com.example.demo.alerts.exception.ResourceNotFoundException;
 import com.example.demo.alerts.model.Alert;
 import com.example.demo.alerts.model.AlertStatus;
 import com.example.demo.alerts.model.Severity;
@@ -205,7 +206,7 @@ public class AlertService {
 
     private Alert requiredAlert(String alertId) {
         return alertRepository.findById(alertId)
-                .orElseThrow(() -> new IllegalArgumentException("Alert not found: " + alertId));
+                .orElseThrow(() -> new ResourceNotFoundException("Alert not found: " + alertId));
     }
 
     private boolean isOpenLike(Alert alert) {

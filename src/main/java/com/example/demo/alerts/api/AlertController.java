@@ -1,9 +1,8 @@
 package com.example.demo.alerts.api;
 
-import com.example.demo.alerts.model.Alert;
-import com.example.demo.alerts.model.AlertLifecycleEvent;
-import com.example.demo.alerts.service.AlertLifecycleService;
-import com.example.demo.alerts.service.AlertService;
+import java.util.List;
+import java.util.Map;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -13,8 +12,11 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.List;
-import java.util.Map;
+import com.example.demo.alerts.exception.ResourceNotFoundException;
+import com.example.demo.alerts.model.Alert;
+import com.example.demo.alerts.model.AlertLifecycleEvent;
+import com.example.demo.alerts.service.AlertLifecycleService;
+import com.example.demo.alerts.service.AlertService;
 
 @RestController
 @RequestMapping("/api/alerts")
@@ -40,15 +42,14 @@ public class AlertController {
 
     @GetMapping("/{alertId}")
     public ResponseEntity<Map<String, Object>> get(@PathVariable String alertId) {
-        return alertService.findById(alertId)
-                .map(alert -> {
-                    List<AlertLifecycleEvent> history = lifecycleService.byAlertId(alertId);
-                    return ResponseEntity.ok(Map.of(
-                            "alert", alert,
-                            "history", history
-                    ));
-                })
-                .orElseGet(() -> ResponseEntity.notFound().build());
+        Alert alert = alertService.findById(alertId)
+                .orElseThrow(() -> new ResourceNotFoundException("Alert not found with id: " + alertId));
+        
+        List<AlertLifecycleEvent> history = lifecycleService.byAlertId(alertId);
+        return ResponseEntity.ok(Map.of(
+                "alert", alert,
+                "history", history
+        ));
     }
 
     @PatchMapping("/{alertId}/resolve")
