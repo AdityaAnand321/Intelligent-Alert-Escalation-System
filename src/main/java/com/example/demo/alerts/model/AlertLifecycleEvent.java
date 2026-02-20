@@ -2,13 +2,27 @@ package com.example.demo.alerts.model;
 
 import java.time.Instant;
 
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.Document;
+
+@Document(collection = "alert_lifecycle_events")
 public class AlertLifecycleEvent {
+    @Id
+    private String eventId;
     private String alertId;
     private String eventType;
     private AlertStatus fromStatus;
     private AlertStatus toStatus;
     private String reason;
     private Instant timestamp;
+
+    public String getEventId() {
+        return eventId;
+    }
+
+    public void setEventId(String eventId) {
+        this.eventId = eventId;
+    }
 
     public String getAlertId() {
         return alertId;

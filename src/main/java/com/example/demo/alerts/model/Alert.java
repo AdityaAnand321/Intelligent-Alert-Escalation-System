@@ -4,7 +4,12 @@ import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.Document;
+
+@Document(collection = "alerts")
 public class Alert {
+    @Id
     private String alertId;
     private SourceType sourceType;
     private Severity severity;

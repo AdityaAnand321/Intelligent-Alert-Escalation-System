@@ -48,7 +48,12 @@ public class DashboardService {
                 .entrySet().stream()
                 .sorted(Map.Entry.<String, Long>comparingByValue().reversed())
                 .limit(limit)
-                .map(entry -> Map.of("driverId", entry.getKey(), "openAlerts", entry.getValue()))
+                .map(entry -> {
+                    Map<String, Object> map = new java.util.HashMap<>();
+                    map.put("driverId", entry.getKey());
+                    map.put("openAlerts", entry.getValue());
+                    return map;
+                })
                 .collect(Collectors.toList());
     }
 
@@ -67,14 +72,14 @@ public class DashboardService {
                 .map(event -> {
                     Alert alert = alertService.getIfPresent(event.getAlertId());
                     String sourceType = alert == null ? "UNKNOWN" : alert.getSourceType().name();
-                    return Map.of(
-                            "alertId", event.getAlertId(),
-                            "eventType", event.getEventType(),
-                            "timestamp", event.getTimestamp(),
-                            "sourceType", sourceType,
-                            "toState", event.getToStatus(),
-                            "reason", event.getReason() == null ? "" : event.getReason()
-                    );
+                    Map<String, Object> map = new java.util.HashMap<>();
+                    map.put("alertId", event.getAlertId());
+                    map.put("eventType", event.getEventType());
+                    map.put("timestamp", event.getTimestamp());
+                    map.put("sourceType", sourceType);
+                    map.put("toState", event.getToStatus());
+                    map.put("reason", event.getReason() == null ? "" : event.getReason());
+                    return map;
                 })
                 .collect(Collectors.toList());
     }

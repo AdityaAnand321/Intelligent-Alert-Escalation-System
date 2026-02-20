@@ -6,10 +6,8 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
@@ -19,17 +17,19 @@ import com.example.demo.alerts.model.Alert;
 import com.example.demo.alerts.model.AlertStatus;
 import com.example.demo.alerts.model.Severity;
 import com.example.demo.alerts.model.SourceType;
+import com.example.demo.alerts.repo.AlertRepository;
 import com.example.demo.alerts.rules.RuleDefinition;
 import com.example.demo.alerts.rules.RuleProvider;
 
 @Service
 public class AlertService {
 
-    private final Map<String, Alert> alerts = new ConcurrentHashMap<>();
+    private final AlertRepository alertRepository;
     private final RuleProvider ruleProvider;
     private final AlertLifecycleService lifecycleService;
 
-    public AlertService(RuleProvider ruleProvider, AlertLifecycleService lifecycleService) {
+    public AlertService(AlertRepository alertRepository, RuleProvider ruleProvider, AlertLifecycleService lifecycleService) {
+        this.alertRepository = alertRepository;
         this.ruleProvider = ruleProvider;
         this.lifecycleService = lifecycleService;
     }
@@ -48,7 +48,7 @@ public class AlertService {
         alert.setMetadata(request.getMetadata() == null ? new HashMap<>() : new HashMap<>(request.getMetadata()));
         alert.setUpdatedAt(Instant.now());
 
-        alerts.put(alert.getAlertId(), alert);
+        alertRepository.save(alert);
         lifecycleService.addEvent(alert.getAlertId(), "CREATED", null, AlertStatus.OPEN, "Alert created");
 
         evaluateEscalation(alert);
@@ -56,17 +56,17 @@ public class AlertService {
     }
 
     public List<Alert> allAlerts() {
-        return alerts.values().stream()
+        return alertRepository.findAll().stream()
                 .sorted(Comparator.comparing(Alert::getTimestamp).reversed())
                 .collect(Collectors.toList());
     }
 
     public Optional<Alert> findById(String alertId) {
-        return Optional.ofNullable(alerts.get(alertId));
+        return alertRepository.findById(alertId);
     }
 
     public Alert getIfPresent(String alertId) {
-        return alerts.get(alertId);
+        return alertRepository.findById(alertId).orElse(null);
     }
 
     public Alert resolve(String alertId) {
@@ -78,19 +78,21 @@ public class AlertService {
         AlertStatus from = alert.getStatus();
         alert.setStatus(AlertStatus.RESOLVED);
         alert.setUpdatedAt(Instant.now());
+        alertRepository.save(alert);
         lifecycleService.addEvent(alertId, "RESOLVED", from, AlertStatus.RESOLVED, "Manually resolved");
         return alert;
     }
 
     public int markComplianceRenewed(String driverId) {
         int updated = 0;
-        for (Alert alert : alerts.values()) {
+        for (Alert alert : alertRepository.findAll()) {
             if (alert.getSourceType() == SourceType.COMPLIANCE
                     && isOpenLike(alert)
                     && driverId != null
                     && driverId.equals(alert.getMetadata().get("driverId"))) {
                 alert.getMetadata().put("document_valid", "true");
                 alert.setUpdatedAt(Instant.now());
+                alertRepository.save(alert);
                 updated++;
             }
         }
@@ -101,7 +103,7 @@ public class AlertService {
         Instant now = Instant.now();
         List<Alert> closed = new ArrayList<>();
 
-        for (Alert alert : alerts.values()) {
+        for (Alert alert : alertRepository.findAll()) {
             if (!isOpenLike(alert)) {
                 continue;
             }
@@ -128,6 +130,7 @@ public class AlertService {
                 alert.setStatus(AlertStatus.AUTO_CLOSED);
                 alert.setAutoCloseReason(reason);
                 alert.setUpdatedAt(Instant.now());
+                alertRepository.save(alert);
                 lifecycleService.addEvent(alert.getAlertId(), "AUTO_CLOSED", from, AlertStatus.AUTO_CLOSED, reason);
                 closed.add(alert);
             }
@@ -148,7 +151,7 @@ public class AlertService {
         }
 
         Instant cutoff = alert.getTimestamp().minus(Duration.ofMinutes(rule.getWindowMins()));
-        long count = alerts.values().stream()
+        long count = alertRepository.findAll().stream()
                 .filter(a -> a.getSourceType() == alert.getSourceType())
                 .filter(a -> driverId.equals(a.getMetadata().get("driverId")))
                 .filter(a -> !a.getTimestamp().isBefore(cutoff))
@@ -160,17 +163,15 @@ public class AlertService {
             alert.setSeverity(Severity.CRITICAL);
             alert.setEscalationTriggered(true);
             alert.setUpdatedAt(Instant.now());
+            alertRepository.save(alert);
             lifecycleService.addEvent(alert.getAlertId(), "ESCALATED", from, AlertStatus.ESCALATED,
                     "Rule triggered: count=" + count + " in " + rule.getWindowMins() + " mins");
         }
     }
 
     private Alert requiredAlert(String alertId) {
-        Alert alert = alerts.get(alertId);
-        if (alert == null) {
-            throw new IllegalArgumentException("Alert not found: " + alertId);
-        }
-        return alert;
+        return alertRepository.findById(alertId)
+                .orElseThrow(() -> new IllegalArgumentException("Alert not found: " + alertId));
     }
 
     private boolean isOpenLike(Alert alert) {
