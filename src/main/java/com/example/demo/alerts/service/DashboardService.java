@@ -1,13 +1,5 @@
 package com.example.demo.alerts.service;
 
-import com.example.demo.alerts.model.Alert;
-import com.example.demo.alerts.model.AlertLifecycleEvent;
-import com.example.demo.alerts.model.AlertStatus;
-import com.example.demo.alerts.model.Severity;
-import com.example.demo.alerts.rules.RuleDefinition;
-import com.example.demo.alerts.rules.RuleProvider;
-import org.springframework.stereotype.Service;
-
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
@@ -16,6 +8,15 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+
+import org.springframework.stereotype.Service;
+
+import com.example.demo.alerts.model.Alert;
+import com.example.demo.alerts.model.AlertLifecycleEvent;
+import com.example.demo.alerts.model.AlertStatus;
+import com.example.demo.alerts.model.Severity;
+import com.example.demo.alerts.rules.RuleDefinition;
+import com.example.demo.alerts.rules.RuleProvider;
 
 @Service
 public class DashboardService {
@@ -30,6 +31,11 @@ public class DashboardService {
         this.ruleProvider = ruleProvider;
     }
 
+    /**
+     * Counts alerts by severity level.
+     * Time Complexity: O(n) where n = total alerts
+     * Space Complexity: O(1) - fixed 3 severity types
+     */
     public Map<String, Long> severityCounts() {
         Map<String, Long> counts = alertService.allAlerts().stream()
                 .collect(Collectors.groupingBy(a -> a.getSeverity().name(), Collectors.counting()));
@@ -41,6 +47,12 @@ public class DashboardService {
         );
     }
 
+    /**
+     * Returns top drivers with most open/escalated alerts.
+     * Time Complexity: O(n log n) where n = total alerts (due to sorting)
+     * Space Complexity: O(k) where k = unique drivers
+     * Optimization: Use priority queue for O(n log limit) instead of O(n log n)
+     */
     public List<Map<String, Object>> topDrivers(int limit) {
         return alertService.allAlerts().stream()
                 .filter(a -> a.getStatus() == AlertStatus.OPEN || a.getStatus() == AlertStatus.ESCALATED)
@@ -57,6 +69,11 @@ public class DashboardService {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Retrieves recently auto-closed alerts within specified hours.
+     * Time Complexity: O(n log n) where n = total alerts (includes sorting)
+     * Space Complexity: O(k) where k = auto-closed alerts in time range
+     */
     public List<Alert> recentAutoClosed(int hours) {
         Instant cutoff = Instant.now().minusSeconds(hours * 3600L);
         return alertService.allAlerts().stream()
@@ -66,6 +83,12 @@ public class DashboardService {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Returns recent lifecycle events with enriched alert data.
+     * Time Complexity: O(m log m + n) where m = total events, n = limit
+     * Space Complexity: O(n) for returned events
+     * Note: MongoDB sorts and limits server-side for efficiency
+     */
     public List<Map<String, Object>> recentEvents(int limit) {
         return lifecycleService.allEvents().stream()
                 .limit(limit)
@@ -88,6 +111,12 @@ public class DashboardService {
         return ruleProvider.allRules();
     }
 
+    /**
+     * Returns alert trend data grouped by date for the past N days.
+     * Time Complexity: O(m) where m = events in time range
+     * Space Complexity: O(d) where d = number of days
+     * Optimization: Use MongoDB aggregation pipeline for server-side processing
+     */
     public List<Map<String, Object>> trend(int days) {
         Instant cutoff = Instant.now().minusSeconds(days * 24L * 3600L);
 

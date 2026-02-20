@@ -34,6 +34,11 @@ public class AlertService {
         this.lifecycleService = lifecycleService;
     }
 
+    /**
+     * Creates a new alert and evaluates escalation rules.
+     * Time Complexity: O(n) where n = alerts in rule evaluation window
+     * Space Complexity: O(1) - single alert storage
+     */
     public Alert createAlert(CreateAlertRequest request) {
         if (request.getSourceType() == null) {
             throw new IllegalArgumentException("sourceType is required");
@@ -55,12 +60,23 @@ public class AlertService {
         return alert;
     }
 
+    /**
+     * Retrieves all alerts sorted by timestamp.
+     * Time Complexity: O(n log n) where n = total alerts (sorting)
+     * Space Complexity: O(n) - list of all alerts
+     * Recommendation: Add pagination for production (limit/offset)
+     */
     public List<Alert> allAlerts() {
         return alertRepository.findAll().stream()
                 .sorted(Comparator.comparing(Alert::getTimestamp).reversed())
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Finds alert by ID using MongoDB indexed lookup.
+     * Time Complexity: O(1) average case with index
+     * Space Complexity: O(1)
+     */
     public Optional<Alert> findById(String alertId) {
         return alertRepository.findById(alertId);
     }
@@ -83,6 +99,12 @@ public class AlertService {
         return alert;
     }
 
+    /**
+     * Marks compliance alerts as renewed for a driver.
+     * Time Complexity: O(n) where n = total alerts (linear scan)
+     * Space Complexity: O(1)
+     * Optimization: Add compound index on (sourceType, metadata.driverId, status)
+     */
     public int markComplianceRenewed(String driverId) {
         int updated = 0;
         for (Alert alert : alertRepository.findAll()) {
@@ -99,6 +121,12 @@ public class AlertService {
         return updated;
     }
 
+    /**
+     * Finds and auto-closes eligible alerts based on rules and time expiry.
+     * Time Complexity: O(n) where n = total alerts
+     * Space Complexity: O(k) where k = closed alerts
+     * Optimization: Filter at database level with autoCloseReason != null
+     */
     public List<Alert> autoCloseEligible(long expiryMins) {
         Instant now = Instant.now();
         List<Alert> closed = new ArrayList<>();
@@ -139,6 +167,12 @@ public class AlertService {
         return closed;
     }
 
+    /**
+     * Evaluates if alert should be escalated based on threshold rules.
+     * Time Complexity: O(n) where n = alerts in time window
+     * Space Complexity: O(1)
+     * Example: 3 overspeed alerts in 60 minutes triggers escalation
+     */
     private void evaluateEscalation(Alert alert) {
         RuleDefinition rule = ruleProvider.forSource(alert.getSourceType());
         if (rule == null || rule.getEscalateIfCount() == null || rule.getWindowMins() == null || alert.isEscalationTriggered()) {

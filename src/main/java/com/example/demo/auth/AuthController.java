@@ -22,6 +22,12 @@ public class AuthController {
     @Autowired
     private JwtUtil jwtUtil;
 
+    /**
+     * Registers a new user with encrypted password.
+     * Time Complexity: O(1) - BCrypt hashing with constant cost factor
+     * Space Complexity: O(1) - single user document
+     */
+    
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody RegisterRequest request) {
         if (userRepository.existsByUsername(request.getUsername())) {
@@ -44,6 +50,11 @@ public class AuthController {
         return ResponseEntity.ok(new AuthResponse(token, user.getUsername(), user.getRole()));
     }
 
+    /**
+     * Authenticates user and generates JWT token.
+     * Time Complexity: O(1) - indexed username lookup + BCrypt verification
+     * Space Complexity: O(1) - single JWT token (~256 bytes)
+     */
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginRequest request) {
         User user = userRepository.findByUsername(request.getUsername())
