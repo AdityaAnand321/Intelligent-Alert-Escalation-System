@@ -7,7 +7,6 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
@@ -46,7 +45,7 @@ public class AlertService {
         }
 
         Alert alert = new Alert();
-        alert.setAlertId(UUID.randomUUID().toString());
+        // Let Hibernate manage the UUID via @GeneratedValue
         alert.setSourceType(request.getSourceType());
         alert.setSeverity(request.getSeverity() == null ? Severity.WARNING : request.getSeverity());
         alert.setTimestamp(request.getTimestamp() == null ? Instant.now() : request.getTimestamp());
@@ -54,7 +53,7 @@ public class AlertService {
         alert.setMetadata(request.getMetadata() == null ? new HashMap<>() : new HashMap<>(request.getMetadata()));
         alert.setUpdatedAt(Instant.now());
 
-        alertRepository.save(alert);
+        alert = alertRepository.save(alert);
         lifecycleService.addEvent(alert.getAlertId(), "CREATED", null, AlertStatus.OPEN, "Alert created");
 
         evaluateEscalation(alert);

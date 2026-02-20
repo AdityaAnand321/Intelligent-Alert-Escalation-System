@@ -1,11 +1,16 @@
 spring:
   application:
     name: demo
-  data:
-    mongodb:
-      uri: mongodb://localhost:27017/alertdb
-
-alerts:
-  expiry-mins: 1440
+  datasource:
+    url: jdbc:postgresql://localhost:5432/alertdb
+    username: postgres
+    password: 1234
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
   scheduler:
     fixed-delay-ms: 120000

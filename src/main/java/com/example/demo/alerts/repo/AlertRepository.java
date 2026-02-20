@@ -1,8 +1,8 @@
 package com.example.demo.alerts.repo;
 
-import org.springframework.data.mongodb.repository.MongoRepository;
+import org.springframework.data.jpa.repository.JpaRepository;
 
 import com.example.demo.alerts.model.Alert;
 
-public interface AlertRepository extends MongoRepository<Alert, String> {
+public interface AlertRepository extends JpaRepository<Alert, String> {
 }

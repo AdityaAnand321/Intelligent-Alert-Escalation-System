@@ -2,12 +2,17 @@ package com.example.demo.alerts.model;
 
 import java.time.Instant;
 
-import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.mapping.Document;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 
-@Document(collection = "alert_lifecycle_events")
+@Entity
+@Table(name = "alert_lifecycle_events")
 public class AlertLifecycleEvent {
     @Id
+    @GeneratedValue(strategy = GenerationType.UUID)
     private String eventId;
     private String alertId;
     private String eventType;

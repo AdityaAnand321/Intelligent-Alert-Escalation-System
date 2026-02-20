@@ -4,17 +4,26 @@ import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.mapping.Document;
+import jakarta.persistence.Column;
+import jakarta.persistence.ElementCollection;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 
-@Document(collection = "alerts")
+@Entity
+@Table(name = "alerts")
 public class Alert {
     @Id
+    @GeneratedValue(strategy = GenerationType.UUID)
     private String alertId;
     private SourceType sourceType;
     private Severity severity;
     private Instant timestamp;
     private AlertStatus status;
+    @ElementCollection
+    @Column(name = "metadata_value")
     private Map<String, String> metadata = new HashMap<>();
     private boolean escalationTriggered;
     private String autoCloseReason;

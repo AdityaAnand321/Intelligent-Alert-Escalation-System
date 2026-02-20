@@ -1,9 +1,13 @@
 package com.example.demo.auth;
 
+import java.util.List;
+import java.util.Map;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -27,7 +31,7 @@ public class AuthController {
      * Time Complexity: O(1) - BCrypt hashing with constant cost factor
      * Space Complexity: O(1) - single user document
      */
-    
+
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody RegisterRequest request) {
         if (userRepository.existsByUsername(request.getUsername())) {
@@ -68,5 +72,22 @@ public class AuthController {
         String token = jwtUtil.generateToken(user.getUsername(), user.getRole());
 
         return ResponseEntity.ok(new AuthResponse(token, user.getUsername(), user.getRole()));
+    }
+
+    /**
+     * Retrieves all registered users (Admin endpoint).
+     * Time Complexity: O(n) where n = total users
+     * Space Complexity: O(n) - list of all users
+     */
+    @GetMapping("/users")
+    public ResponseEntity<Map<String, Object>> getAllUsers() {
+        List<User> users = userRepository.findAll();
+        return ResponseEntity.ok(Map.of(
+                "totalUsers", users.size(),
+                "users", users.stream().map(u -> Map.of(
+                        "username", (Object) u.getUsername(),
+                        "role", (Object) u.getRole()
+                )).toList()
+        ));
     }
 }
