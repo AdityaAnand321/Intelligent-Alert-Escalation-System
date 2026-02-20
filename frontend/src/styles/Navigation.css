@@ -1,0 +1,84 @@
+.navbar {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 15px 30px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    flex-wrap: wrap;
+    gap: 20px;
+}
+
+.navbar-brand h1 {
+    font-size: 24px;
+    margin: 0;
+    white-space: nowrap;
+}
+
+.navbar-menu ul {
+    list-style: none;
+    display: flex;
+    gap: 30px;
+    margin: 0;
+}
+
+.navbar-menu a {
+    color: white;
+    text-decoration: none;
+    cursor: pointer;
+    padding: 8px 12px;
+    border-radius: 4px;
+    transition: all 0.3s;
+    opacity: 0.8;
+}
+
+.navbar-menu a:hover,
+.navbar-menu a.active {
+    opacity: 1;
+    background-color: rgba(255, 255, 255, 0.2);
+}
+
+.navbar-user {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    white-space: nowrap;
+}
+
+.username {
+    opacity: 0.9;
+}
+
+.btn-logout {
+    background-color: rgba(255, 255, 255, 0.2);
+    color: white;
+    border: 1px solid white;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.btn-logout:hover {
+    background-color: rgba(255, 255, 255, 0.3);
+    transform: translateY(-2px);
+}
+
+@media (max-width: 768px) {
+    .navbar {
+        flex-direction: column;
+        padding: 15px;
+        gap: 15px;
+    }
+
+    .navbar-menu ul {
+        gap: 15px;
+        justify-content: center;
+        width: 100%;
+    }
+
+    .navbar-brand h1 {
+        font-size: 20px;
+    }
+}
