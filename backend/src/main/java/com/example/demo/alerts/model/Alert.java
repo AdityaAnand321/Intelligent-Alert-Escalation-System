@@ -7,6 +7,7 @@ import java.util.Map;
 import jakarta.persistence.Column;
 import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -20,9 +21,10 @@ public class Alert {
     private String alertId;
     private SourceType sourceType;
     private Severity severity;
+    private String driverId;
     private Instant timestamp;
     private AlertStatus status;
-    @ElementCollection
+    @ElementCollection(fetch = FetchType.EAGER)
     @Column(name = "metadata_value")
     private Map<String, String> metadata = new HashMap<>();
     private boolean escalationTriggered;
@@ -51,6 +53,14 @@ public class Alert {
 
     public void setSeverity(Severity severity) {
         this.severity = severity;
+    }
+
+    public String getDriverId() {
+        return driverId;
+    }
+
+    public void setDriverId(String driverId) {
+        this.driverId = driverId;
     }
 
     public Instant getTimestamp() {

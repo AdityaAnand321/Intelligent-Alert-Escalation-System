@@ -43,6 +43,24 @@ export default function UsersPage() {
         }
     };
 
+    const handleDeleteUser = async (userId, username) => {
+        if (!userId) {
+            setError('Invalid user ID');
+            return;
+        }
+
+        if (window.confirm(`Are you sure you want to delete user "${username}"? This action cannot be undone.`)) {
+            try {
+                setError('');
+                await authAPI.deleteUser(userId);
+                fetchUsers();
+                alert('User deleted successfully!');
+            } catch (err) {
+                setError(err.response?.data?.message || 'Failed to delete user');
+            }
+        }
+    };
+
     if (loading) return <div className="users-container"><p>Loading...</p></div>;
 
     return (
@@ -97,16 +115,29 @@ export default function UsersPage() {
                                 <th>Username</th>
                                 <th>Role</th>
                                 <th>Created At</th>
+                                <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody>
-                            {users.map(user => (
-                                <tr key={user.id}>
-                                    <td>{user.username}</td>
-                                    <td>{user.role || 'USER'}</td>
-                                    <td>{new Date(user.createdAt).toLocaleDateString()}</td>
+                            {users && users.length > 0 ? users.map(user => (
+                                <tr key={user?.id || user?.username || Math.random()}>
+                                    <td>{user?.username || '-'}</td>
+                                    <td>{user?.role || 'USER'}</td>
+                                    <td>{user?.createdAt ? new Date(user.createdAt).toLocaleString() : '-'}</td>
+                                    <td>
+                                        <button 
+                                            className="btn-danger"
+                                            onClick={() => handleDeleteUser(user?.id, user?.username)}
+                                        >
+                                            Remove
+                                        </button>
+                                    </td>
                                 </tr>
-                            ))}
+                            )) : (
+                                <tr>
+                                    <td colSpan="4">No users found</td>
+                                </tr>
+                            )}
                         </tbody>
                     </table>
                 ) : (

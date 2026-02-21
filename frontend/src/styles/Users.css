@@ -36,6 +36,24 @@
     box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
 }
 
+.btn-danger {
+    background: linear-gradient(135deg, #ff4757 0%, #e84118 100%);
+    color: white;
+    padding: 8px 16px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 13px;
+    transition: all 0.3s;
+}
+
+.btn-danger:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(255, 71, 87, 0.4);
+    background: linear-gradient(135deg, #ff3838 0%, #d63010 100%);
+}
+
 .user-form {
     background: #f8f9fa;
     padding: 25px;
@@ -127,5 +145,10 @@
     .users-table th,
     .users-table td {
         padding: 8px;
+    }
+
+    .btn-danger {
+        padding: 6px 12px;
+        font-size: 12px;
     }
 }

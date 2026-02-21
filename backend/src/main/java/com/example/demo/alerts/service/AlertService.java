@@ -44,13 +44,25 @@ public class AlertService {
             throw new IllegalArgumentException("sourceType is required");
         }
 
+        String requestDriverId = request.getDriverId() == null ? null : request.getDriverId().trim();
+        String metadataDriverId = request.getMetadata() == null ? null : request.getMetadata().get("driverId");
+        if ((requestDriverId == null || requestDriverId.isBlank()) && (metadataDriverId == null || metadataDriverId.isBlank())) {
+            throw new IllegalArgumentException("driverId is required");
+        }
+
+        String normalizedDriverId = (requestDriverId != null && !requestDriverId.isBlank())
+            ? requestDriverId
+            : (metadataDriverId == null ? "" : metadataDriverId.trim());
+
         Alert alert = new Alert();
         // Let Hibernate manage the UUID via @GeneratedValue
         alert.setSourceType(request.getSourceType());
         alert.setSeverity(request.getSeverity() == null ? Severity.WARNING : request.getSeverity());
+        alert.setDriverId(normalizedDriverId);
         alert.setTimestamp(request.getTimestamp() == null ? Instant.now() : request.getTimestamp());
         alert.setStatus(AlertStatus.OPEN);
         alert.setMetadata(request.getMetadata() == null ? new HashMap<>() : new HashMap<>(request.getMetadata()));
+        alert.getMetadata().put("driverId", normalizedDriverId);
         alert.setUpdatedAt(Instant.now());
 
         alert = alertRepository.save(alert);
@@ -111,8 +123,9 @@ public class AlertService {
             if (alert.getSourceType() == SourceType.COMPLIANCE
                     && isOpenLike(alert)
                     && driverId != null
-                    && driverId.equals(alert.getMetadata().get("driverId"))) {
+                    && driverId.equals(alert.getDriverId())) {
                 alert.getMetadata().put("document_valid", "true");
+                alert.getMetadata().put("document_expiry_date", Instant.now().plus(Duration.ofDays(365)).toString());
                 alert.setUpdatedAt(Instant.now());
                 alertRepository.save(alert);
                 updated++;
@@ -179,7 +192,7 @@ public class AlertService {
             return;
         }
 
-        String driverId = alert.getMetadata().get("driverId");
+        String driverId = alert.getDriverId();
         if (driverId == null || driverId.isBlank()) {
             return;
         }
@@ -187,7 +200,7 @@ public class AlertService {
         Instant cutoff = alert.getTimestamp().minus(Duration.ofMinutes(rule.getWindowMins()));
         long count = alertRepository.findAll().stream()
                 .filter(a -> a.getSourceType() == alert.getSourceType())
-                .filter(a -> driverId.equals(a.getMetadata().get("driverId")))
+            .filter(a -> driverId.equals(a.getDriverId()))
                 .filter(a -> !a.getTimestamp().isBefore(cutoff))
                 .count();
 

@@ -4,10 +4,13 @@ import java.util.List;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -79,15 +82,49 @@ public class AuthController {
      * Time Complexity: O(n) where n = total users
      * Space Complexity: O(n) - list of all users
      */
+
     @GetMapping("/users")
     public ResponseEntity<Map<String, Object>> getAllUsers() {
         List<User> users = userRepository.findAll();
         return ResponseEntity.ok(Map.of(
                 "totalUsers", users.size(),
                 "users", users.stream().map(u -> Map.of(
+                        "id", (Object) u.getId(),
                         "username", (Object) u.getUsername(),
-                        "role", (Object) u.getRole()
+                        "role", (Object) u.getRole(),
+                        "createdAt", (Object) u.getCreatedAt().toString()
                 )).toList()
         ));
+    }
+
+    /**
+     * Deletes a user by ID.
+     * Time Complexity: O(1) - indexed ID lookup + delete
+     * Space Complexity: O(1)
+     */
+    @DeleteMapping("/users/{userId}")
+    public ResponseEntity<?> deleteUser(@PathVariable String userId) {
+        if (!userRepository.existsById(userId)) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body("User not found with id: " + userId);
+        }
+
+        try {
+            userRepository.deleteById(userId);
+            return ResponseEntity.ok(Map.of(
+                    "message", "User deleted successfully",
+                    "userId", userId
+            ));
+        } catch (DataIntegrityViolationException ex) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of(
+                    "message", "User cannot be deleted because related records exist",
+                    "userId", userId
+            ));
+        } catch (Exception ex) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
+                    "message", "Failed to delete user. Please try again.",
+                    "userId", userId
+            ));
+        }
     }
 }

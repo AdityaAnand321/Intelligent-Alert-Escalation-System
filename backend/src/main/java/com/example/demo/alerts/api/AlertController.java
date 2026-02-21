@@ -60,10 +60,14 @@ public class AlertController {
     @PostMapping("/compliance-renewed")
     public ResponseEntity<Map<String, Object>> complianceRenewed(@RequestBody ComplianceRenewalRequest request) {
         int updated = alertService.markComplianceRenewed(request.getDriverId());
+        int autoClosed = (int) alertService.autoCloseEligible(0).stream()
+            .filter(a -> request.getDriverId() != null && request.getDriverId().equals(a.getDriverId()))
+            .count();
         return ResponseEntity.ok(Map.of(
                 "driverId", request.getDriverId(),
                 "updatedAlerts", updated,
-                "message", "Compliance alerts marked as document_valid=true"
+            "autoClosedAlerts", autoClosed,
+            "message", "Compliance alerts marked as document_valid=true and auto-closed where eligible"
         ));
     }
 }

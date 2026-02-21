@@ -27,14 +27,22 @@ export const authAPI = {
     login: (username, password) => 
         api.post('/auth/login', { username, password }),
     
-    getAllUsers: () => 
-        api.get('/auth/users')
+    getAllUsers: async () => {
+        const response = await api.get('/auth/users');
+        return {
+            ...response,
+            data: Array.isArray(response.data.users) ? response.data.users : []
+        };
+    },
+    
+    deleteUser: (userId) => 
+        api.delete(`/auth/users/${userId}`)
 };
 
 // Alerts API
 export const alertsAPI = {
-    createAlert: (sourceType, severity, metadata) =>
-        api.post('/alerts', { sourceType, severity, metadata }),
+    createAlert: (sourceType, severity, driverId, metadata) =>
+        api.post('/alerts', { sourceType, severity, driverId, metadata }),
     
     getAllAlerts: () =>
         api.get('/alerts'),
@@ -60,8 +68,14 @@ export const dashboardAPI = {
     getRecentEvents: (limit = 20) =>
         api.get(`/dashboard/events?limit=${limit}`),
     
+    getRecentAutoClosed: (hours = 24) =>
+        api.get(`/dashboard/auto-closed?hours=${hours}`),
+    
     getTrend: (days = 7) =>
-        api.get(`/dashboard/trend?days=${days}`)
+        api.get(`/dashboard/trend?days=${days}`),
+    
+    getActiveRules: () =>
+        api.get('/dashboard/config/rules')
 };
 
 export default api;

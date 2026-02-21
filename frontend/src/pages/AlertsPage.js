@@ -10,8 +10,9 @@ export default function AlertsPage() {
     const [selectedAlert, setSelectedAlert] = useState(null);
     
     const [formData, setFormData] = useState({
-        sourceType: '',
-        severity: 'MEDIUM',
+        sourceType: 'OVERSPEEDING',
+        severity: 'INFO',
+        driverId: '',
         metadata: {}
     });
 
@@ -38,9 +39,10 @@ export default function AlertsPage() {
             await alertsAPI.createAlert(
                 formData.sourceType,
                 formData.severity,
+                formData.driverId,
                 formData.metadata
             );
-            setFormData({ sourceType: '', severity: 'MEDIUM', metadata: {} });
+            setFormData({ sourceType: 'OVERSPEEDING', severity: 'INFO', driverId: '', metadata: {} });
             setShowForm(false);
             fetchAlerts();
             alert('Alert created successfully!');
@@ -59,6 +61,30 @@ export default function AlertsPage() {
                 setError('Failed to resolve alert');
             }
         }
+    };
+
+    const getDocumentStatus = (alert) => {
+        if (!alert || alert.sourceType !== 'COMPLIANCE') return '-';
+        const documentValid = String(alert?.metadata?.document_valid || 'false').toLowerCase() === 'true';
+        const expiryRaw = alert?.metadata?.document_expiry_date;
+        if (expiryRaw) {
+            const expiryDate = new Date(expiryRaw);
+            if (!Number.isNaN(expiryDate.getTime())) {
+                const isExpired = expiryDate.getTime() < Date.now();
+                if (isExpired) return 'EXPIRED';
+                return documentValid ? 'VALID' : 'PENDING';
+            }
+        }
+        return documentValid ? 'VALID' : 'EXPIRED';
+    };
+
+    const getDocumentExpiryDate = (alert) => {
+        if (!alert || alert.sourceType !== 'COMPLIANCE') return '-';
+        const expiryRaw = alert?.metadata?.document_expiry_date;
+        if (!expiryRaw) return '-';
+        const expiryDate = new Date(expiryRaw);
+        if (Number.isNaN(expiryDate.getTime())) return '-';
+        return expiryDate.toLocaleDateString();
     };
 
     if (loading) return <div className="alerts-container"><p>Loading...</p></div>;
@@ -83,13 +109,15 @@ export default function AlertsPage() {
                     
                     <div className="form-group">
                         <label>Source Type</label>
-                        <input
-                            type="text"
+                        <select
                             value={formData.sourceType}
                             onChange={(e) => setFormData({...formData, sourceType: e.target.value})}
-                            placeholder="e.g., GPS, TELEMATICS"
                             required
-                        />
+                        >
+                            <option>OVERSPEEDING</option>
+                            <option>COMPLIANCE</option>
+                            <option>NEGATIVE_FEEDBACK</option>
+                        </select>
                     </div>
 
                     <div className="form-group">
@@ -98,11 +126,21 @@ export default function AlertsPage() {
                             value={formData.severity}
                             onChange={(e) => setFormData({...formData, severity: e.target.value})}
                         >
-                            <option>LOW</option>
-                            <option>MEDIUM</option>
-                            <option>HIGH</option>
+                            <option>INFO</option>
+                            <option>WARNING</option>
                             <option>CRITICAL</option>
                         </select>
+                    </div>
+
+                    <div className="form-group">
+                        <label>Driver ID</label>
+                        <input
+                            type="text"
+                            value={formData.driverId}
+                            onChange={(e) => setFormData({...formData, driverId: e.target.value})}
+                            placeholder="Enter driver ID (e.g. DRV001)"
+                            required
+                        />
                     </div>
 
                     <div className="form-group">
@@ -128,7 +166,10 @@ export default function AlertsPage() {
                         <thead>
                             <tr>
                                 <th>ID</th>
+                                <th>Driver ID</th>
                                 <th>Source</th>
+                                <th>Document</th>
+                                <th>Expiry Date</th>
                                 <th>Severity</th>
                                 <th>Status</th>
                                 <th>Created</th>
@@ -137,22 +178,25 @@ export default function AlertsPage() {
                         </thead>
                         <tbody>
                             {alerts.map(alert => (
-                                <tr key={alert.id}>
+                                <tr key={alert?.alertId || Math.random()}>
                                     <td 
                                         className="clickable-id"
-                                        onClick={() => setSelectedAlert(selectedAlert?.id === alert.id ? null : alert)}
+                                        onClick={() => setSelectedAlert(selectedAlert?.alertId === alert.alertId ? null : alert)}
                                     >
-                                        {alert.id.substring(0, 12)}...
+                                        {alert?.alertId ? String(alert.alertId).substring(0, 12) : 'N/A'}...
                                     </td>
-                                    <td>{alert.sourceType}</td>
-                                    <td><span className={`severity ${alert.severity.toLowerCase()}`}>{alert.severity}</span></td>
-                                    <td>{alert.status}</td>
-                                    <td>{new Date(alert.createdAt).toLocaleDateString()}</td>
+                                    <td>{alert?.driverId || alert?.metadata?.driverId || '-'}</td>
+                                    <td>{alert?.sourceType || '-'}</td>
+                                    <td>{getDocumentStatus(alert)}</td>
+                                    <td>{getDocumentExpiryDate(alert)}</td>
+                                    <td><span className={`severity ${(alert?.severity || '').toLowerCase()}`}>{alert?.severity || '-'}</span></td>
+                                    <td>{alert?.status || '-'}</td>
+                                    <td>{alert?.createdAt ? new Date(alert.createdAt).toLocaleDateString() : '-'}</td>
                                     <td>
-                                        {alert.status !== 'RESOLVED' && (
+                                        {alert?.status !== 'RESOLVED' && alert?.alertId && (
                                             <button
                                                 className="btn-resolve"
-                                                onClick={() => handleResolveAlert(alert.id)}
+                                                onClick={() => handleResolveAlert(alert.alertId)}
                                             >
                                                 Resolve
                                             </button>
@@ -173,8 +217,11 @@ export default function AlertsPage() {
                         <button className="close-btn" onClick={() => setSelectedAlert(null)}>×</button>
                         <h2>Alert Details</h2>
                         <div className="details-grid">
-                            <div><strong>ID:</strong> {selectedAlert.id}</div>
+                            <div><strong>ID:</strong> {selectedAlert.alertId}</div>
                             <div><strong>Source:</strong> {selectedAlert.sourceType}</div>
+                            <div><strong>Driver ID:</strong> {selectedAlert.driverId || selectedAlert.metadata?.driverId || '-'}</div>
+                            <div><strong>Document Status:</strong> {getDocumentStatus(selectedAlert)}</div>
+                            <div><strong>Document Expiry:</strong> {getDocumentExpiryDate(selectedAlert)}</div>
                             <div><strong>Severity:</strong> {selectedAlert.severity}</div>
                             <div><strong>Status:</strong> {selectedAlert.status}</div>
                             <div><strong>Created:</strong> {new Date(selectedAlert.createdAt).toLocaleString()}</div>

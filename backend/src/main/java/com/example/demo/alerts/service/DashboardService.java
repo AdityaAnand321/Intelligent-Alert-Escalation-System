@@ -56,7 +56,10 @@ public class DashboardService {
     public List<Map<String, Object>> topDrivers(int limit) {
         return alertService.allAlerts().stream()
                 .filter(a -> a.getStatus() == AlertStatus.OPEN || a.getStatus() == AlertStatus.ESCALATED)
-                .collect(Collectors.groupingBy(a -> a.getMetadata().getOrDefault("driverId", "unknown"), Collectors.counting()))
+                .collect(Collectors.groupingBy(a -> {
+                    String driverId = a.getDriverId();
+                    return (driverId == null || driverId.isBlank()) ? "unknown" : driverId;
+                }, Collectors.counting()))
                 .entrySet().stream()
                 .sorted(Map.Entry.<String, Long>comparingByValue().reversed())
                 .limit(limit)
@@ -95,8 +98,20 @@ public class DashboardService {
                 .map(event -> {
                     Alert alert = alertService.getIfPresent(event.getAlertId());
                     String sourceType = alert == null ? "UNKNOWN" : alert.getSourceType().name();
+                    String driverId = "unknown";
+                    if (alert != null) {
+                        if (alert.getDriverId() != null && !alert.getDriverId().isBlank()) {
+                            driverId = alert.getDriverId();
+                        } else if (alert.getMetadata() != null) {
+                            String metadataDriverId = alert.getMetadata().get("driverId");
+                            if (metadataDriverId != null && !metadataDriverId.isBlank()) {
+                                driverId = metadataDriverId;
+                            }
+                        }
+                    }
                     Map<String, Object> map = new java.util.HashMap<>();
                     map.put("alertId", event.getAlertId());
+                    map.put("driverId", driverId);
                     map.put("eventType", event.getEventType());
                     map.put("timestamp", event.getTimestamp());
                     map.put("sourceType", sourceType);
