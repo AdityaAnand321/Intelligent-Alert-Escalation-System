@@ -75,6 +75,8 @@ export default function DashboardPage() {
     const fetchDashboardData = async () => {
         try {
             setLoading(true);
+            const token = localStorage.getItem('token');
+            console.log('[Dashboard] Starting data fetch. Token exists:', !!token);
             const [summaryRes, offendersRes, eventsRes, autoClosedRes, trendRes, rulesRes] = await Promise.all([
                 dashboardAPI.getSummary(),
                 dashboardAPI.getTopOffenders(5),

@@ -13,11 +13,30 @@ const api = axios.create({
 // Add token to requests
 api.interceptors.request.use(config => {
     const token = localStorage.getItem('token');
+    console.log('[API Interceptor] Token from localStorage:', token ? `${token.substring(0, 20)}...` : 'NO TOKEN');
     if (token) {
         config.headers.Authorization = `Bearer ${token}`;
+        console.log('[API Interceptor] Added Authorization header');
+    } else {
+        console.warn('[API Interceptor] No token found in localStorage!');
     }
     return config;
+}, error => {
+    console.error('[API Interceptor] Request error:', error);
+    return Promise.reject(error);
 });
+
+// Add response interceptor for debugging
+api.interceptors.response.use(
+    response => {
+        console.log('[API Response] Success:', response.config.url, response.status);
+        return response;
+    },
+    error => {
+        console.error('[API Response] Error:', error.config?.url, error.response?.status, error.response?.data);
+        return Promise.reject(error);
+    }
+);
 
 // Auth API
 export const authAPI = {

@@ -1,4 +1,4 @@
-{
+﻿{
   "rules": {
     "overspeed": {
       "escalateIfCount": 3,
@@ -13,3 +13,4 @@
     }
   }
 }
+

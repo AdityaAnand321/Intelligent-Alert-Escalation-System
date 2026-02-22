@@ -152,6 +152,10 @@ public class AlertService {
             String reason = null;
             RuleDefinition rule = ruleProvider.forSource(alert.getSourceType());
 
+            if (alert.getStatus() == AlertStatus.ESCALATED) {
+                evaluateDeEscalation(alert, rule, now);
+            }
+
             if (rule != null && "document_valid".equalsIgnoreCase(rule.getAutoCloseIf())) {
                 String valid = alert.getMetadata().getOrDefault("document_valid", "false");
                 if ("true".equalsIgnoreCase(valid)) {
@@ -213,6 +217,34 @@ public class AlertService {
             alertRepository.save(alert);
             lifecycleService.addEvent(alert.getAlertId(), "ESCALATED", from, AlertStatus.ESCALATED,
                     "Rule triggered: count=" + count + " in " + rule.getWindowMins() + " mins");
+        }
+    }
+
+    private void evaluateDeEscalation(Alert alert, RuleDefinition rule, Instant now) {
+        if (rule == null || rule.getEscalateIfCount() == null || rule.getWindowMins() == null) {
+            return;
+        }
+
+        String driverId = alert.getDriverId();
+        if (driverId == null || driverId.isBlank()) {
+            return;
+        }
+
+        Instant cutoff = now.minus(Duration.ofMinutes(rule.getWindowMins()));
+        long count = alertRepository.findAll().stream()
+                .filter(a -> a.getSourceType() == alert.getSourceType())
+                .filter(a -> driverId.equals(a.getDriverId()))
+                .filter(a -> !a.getTimestamp().isBefore(cutoff))
+                .count();
+
+        if (count < rule.getEscalateIfCount()) {
+            AlertStatus from = alert.getStatus();
+            alert.setStatus(AlertStatus.OPEN);
+            alert.setSeverity(Severity.WARNING);
+            alert.setUpdatedAt(Instant.now());
+            alertRepository.save(alert);
+            lifecycleService.addEvent(alert.getAlertId(), "DE_ESCALATED", from, AlertStatus.OPEN,
+                    "Rule no longer met: count=" + count + " in " + rule.getWindowMins() + " mins");
         }
     }
 

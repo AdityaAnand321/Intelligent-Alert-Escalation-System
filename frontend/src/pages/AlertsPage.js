@@ -8,6 +8,8 @@ export default function AlertsPage() {
     const [error, setError] = useState('');
     const [showForm, setShowForm] = useState(false);
     const [selectedAlert, setSelectedAlert] = useState(null);
+    const [selectedAlertHistory, setSelectedAlertHistory] = useState([]);
+    const [detailsLoading, setDetailsLoading] = useState(false);
     
     const [formData, setFormData] = useState({
         sourceType: 'OVERSPEEDING',
@@ -60,6 +62,27 @@ export default function AlertsPage() {
             } catch (err) {
                 setError('Failed to resolve alert');
             }
+        }
+    };
+
+    const handleSelectAlert = async (alert) => {
+        if (selectedAlert?.alertId === alert.alertId) {
+            setSelectedAlert(null);
+            setSelectedAlertHistory([]);
+            return;
+        }
+
+        setDetailsLoading(true);
+        try {
+            const response = await alertsAPI.getAlertById(alert.alertId);
+            setSelectedAlert(response.data?.alert || alert);
+            setSelectedAlertHistory(Array.isArray(response.data?.history) ? response.data.history : []);
+        } catch (err) {
+            setSelectedAlert(alert);
+            setSelectedAlertHistory([]);
+            setError('Failed to load alert history');
+        } finally {
+            setDetailsLoading(false);
         }
     };
 
@@ -181,7 +204,7 @@ export default function AlertsPage() {
                                 <tr key={alert?.alertId || Math.random()}>
                                     <td 
                                         className="clickable-id"
-                                        onClick={() => setSelectedAlert(selectedAlert?.alertId === alert.alertId ? null : alert)}
+                                        onClick={() => handleSelectAlert(alert)}
                                     >
                                         {alert?.alertId ? String(alert.alertId).substring(0, 12) : 'N/A'}...
                                     </td>
@@ -191,7 +214,7 @@ export default function AlertsPage() {
                                     <td>{getDocumentExpiryDate(alert)}</td>
                                     <td><span className={`severity ${(alert?.severity || '').toLowerCase()}`}>{alert?.severity || '-'}</span></td>
                                     <td>{alert?.status || '-'}</td>
-                                    <td>{alert?.createdAt ? new Date(alert.createdAt).toLocaleDateString() : '-'}</td>
+                                    <td>{alert?.timestamp ? new Date(alert.timestamp).toLocaleDateString() : '-'}</td>
                                     <td>
                                         {alert?.status !== 'RESOLVED' && alert?.alertId && (
                                             <button
@@ -214,7 +237,7 @@ export default function AlertsPage() {
             {selectedAlert && (
                 <div className="alert-details-modal">
                     <div className="modal-content">
-                        <button className="close-btn" onClick={() => setSelectedAlert(null)}>×</button>
+                        <button className="close-btn" onClick={() => { setSelectedAlert(null); setSelectedAlertHistory([]); }}>×</button>
                         <h2>Alert Details</h2>
                         <div className="details-grid">
                             <div><strong>ID:</strong> {selectedAlert.alertId}</div>
@@ -224,10 +247,28 @@ export default function AlertsPage() {
                             <div><strong>Document Expiry:</strong> {getDocumentExpiryDate(selectedAlert)}</div>
                             <div><strong>Severity:</strong> {selectedAlert.severity}</div>
                             <div><strong>Status:</strong> {selectedAlert.status}</div>
-                            <div><strong>Created:</strong> {new Date(selectedAlert.createdAt).toLocaleString()}</div>
+                            <div><strong>Created:</strong> {selectedAlert.timestamp ? new Date(selectedAlert.timestamp).toLocaleString() : '-'}</div>
                             {selectedAlert.metadata && (
                                 <div><strong>Metadata:</strong> {JSON.stringify(selectedAlert.metadata, null, 2)}</div>
                             )}
+                            <div>
+                                <strong>Lifecycle History:</strong>
+                                {detailsLoading ? (
+                                    <p>Loading history...</p>
+                                ) : selectedAlertHistory.length > 0 ? (
+                                    <ul>
+                                        {selectedAlertHistory.map((event, idx) => (
+                                            <li key={event?.eventId || idx}>
+                                                {event?.timestamp ? new Date(event.timestamp).toLocaleString() : '-'} - {event?.eventType || '-'}
+                                                {' '}({event?.fromStatus || '-'} {'→'} {event?.toStatus || '-'})
+                                                {event?.reason ? ` - ${event.reason}` : ''}
+                                            </li>
+                                        ))}
+                                    </ul>
+                                ) : (
+                                    <p>No lifecycle history found</p>
+                                )}
+                            </div>
                         </div>
                     </div>
                 </div>
